@@ -1,31 +1,328 @@
----
-image: https://remotion.media/docs/generated/articles-docs-create-videos-with-code.png
-title: Create videos with code
-crumb: 'Wait, you read the code?'
----
+npx create-video@Terminal yang diatur netizen out.mp4
+npm i @remotion/google-fonts
+import React from "react";
+import {
+  AbsoluteFill,
+  Sequence,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+  Easing,
+} from "remotion";
+import { loadFont } from "@remotion/google-fonts/Baloo2";
 
-import {Grid} from '../components/TableOfContents/Grid';
-import {TOCItem} from '../components/TableOfContents/TOCItem';
+const { fontFamily } = loadFont();
 
-Remotion came out in 2021, way before agents were the hype. <br />
-How did people create videos back then? They wrote code themselves!
+// ====== KONFIGURASI (ganti sesukamu) ======
+export const FPS = 30;
+export const DURATION = 60 * FPS; // 1800 frame
+export const WIDTH = 1080;
+export const HEIGHT = 1920;
 
-By learning how Remotion markup works, you can do more sophisticated videos, optimize performance, make and publish your own components, connect data and become ready to build apps.
+const C = {
+  sky: "#8fd3f4",
+  skyLow: "#e8f7d4",
+  hill: "#5aa55a",
+  hillDark: "#3f8a47",
+  soil: "#c98f55",
+  roof: "#c0392b",
+  wood: "#8b5a2b",
+  cream: "#fff8e7",
+  ink: "#2b2118",
+  gold: "#ffc933",
+  tt: "#ff0050", // aksen like
+};
 
-<Grid>
-  <TOCItem link="/docs/idea">
-    <strong>The core idea</strong>
-  </TOCItem>
-  <TOCItem link="/docs/components">
-    <strong>Components</strong>
-  </TOCItem>
-  <TOCItem link="/docs/timing">
-    <strong>Timing and trimming</strong>
-  </TOCItem>
-  <TOCItem link="/docs/animating-properties">
-    <strong>Animating properties</strong>
-  </TOCItem>
-  <TOCItem link="/docs/composing">
-    <strong>Composing components</strong>
-  </TOCItem>
-</Grid>
+type Komen = { user: string; text: string; likes: number; dest: string; color: string };
+
+const KOMEN: Komen[] = [
+  { user: "@wongkudus_asli", text: "Tujuan pertama Jakarta bang, kasian yang mudik 😭", likes: 4821, dest: "JAKARTA", color: "#e74c3c" },
+  { user: "@bocahsawah", text: "BALI LAH!! healing dulu biar ga stres 🌴", likes: 3190, dest: "BALI", color: "#16a085" },
+  { user: "@mbakyu_jogja", text: "Jogja aja, angkringan 24 jam 🍵", likes: 2764, dest: "JOGJA", color: "#8e44ad" },
+  { user: "@sultan_andara", text: "Surabaya! Rawon nunggu 🔥", likes: 1450, dest: "SURABAYA", color: "#d35400" },
+  { user: "@netizen+62", text: "Ke Mars bang wkwk 🚀", likes: 988, dest: "MARS", color: "#2c3e50" },
+];
+
+// ====== UTIL ======
+const useIn = (start: number, dur = 18) => {
+  const f = useCurrentFrame();
+  return interpolate(f, [start, start + dur], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+};
+
+const Pop: React.FC<{ at: number; children: React.ReactNode; style?: React.CSSProperties }> = ({ at, children, style }) => {
+  const f = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const s = spring({ frame: f - at, fps, config: { damping: 11, stiffness: 140 } });
+  return <div style={{ transform: `scale(${s})`, opacity: s > 0.01 ? 1 : 0, ...style }}>{children}</div>;
+};
+
+// ====== LATAR KAMPUNG ======
+const Background: React.FC = () => {
+  const f = useCurrentFrame();
+  const drift = (f * 0.4) % 1400;
+  return (
+    <AbsoluteFill style={{ background: `linear-gradient(${C.sky}, ${C.skyLow} 62%)` }}>
+      {/* awan bergerak */}
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            top: 140 + i * 170,
+            left: ((i * 520 + drift * (1 + i * 0.4)) % 1500) - 300,
+            width: 260 + i * 40,
+            height: 80,
+            borderRadius: 80,
+            background: "rgba(255,255,255,.85)",
+          }}
+        />
+      ))}
+      {/* gunung & sawah */}
+      <div style={{ position: "absolute", bottom: 640, left: -120, width: 900, height: 900, borderRadius: "50%", background: C.hillDark }} />
+      <div style={{ position: "absolute", bottom: 600, right: -260, width: 1000, height: 1000, borderRadius: "50%", background: C.hill }} />
+      <div style={{ position: "absolute", bottom: 0, width: "100%", height: 700, background: C.hill }} />
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} style={{ position: "absolute", bottom: 40 + i * 120, left: -40, right: -40, height: 56, background: i % 2 ? "#7bc96f" : "#6bbd62", borderRadius: 40 }} />
+      ))}
+    </AbsoluteFill>
+  );
+};
+
+// ====== PAPAN JUDUL (TOP BAR) ======
+const DayBadge: React.FC = () => {
+  const f = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const s = spring({ frame: f, fps, config: { damping: 9 } });
+  return (
+    <div style={{ position: "absolute", top: 70, left: 0, right: 0, display: "flex", justifyContent: "center", transform: `scale(${s}) rotate(-2deg)` }}>
+      <div style={{ background: C.gold, color: C.ink, border: `8px solid ${C.ink}`, borderRadius: 36, padding: "6px 46px", fontSize: 120, fontWeight: 800, boxShadow: `0 12px 0 ${C.ink}` }}>
+        DAY 1
+      </div>
+    </div>
+  );
+};
+
+const Caption: React.FC<{ text: string; sub?: string; top?: number }> = ({ text, sub, top = 280 }) => {
+  const p = useIn(0, 14);
+  return (
+    <div style={{ position: "absolute", top, left: 50, right: 50, textAlign: "center", opacity: p, transform: `translateY(${(1 - p) * 30}px)` }}>
+      <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1, color: "#fff", WebkitTextStroke: `10px ${C.ink}`, paintOrder: "stroke fill" as any }}>{text}</div>
+      {sub && <div style={{ marginTop: 18, fontSize: 46, fontWeight: 700, color: C.ink, background: C.cream, display: "inline-block", padding: "6px 28px", borderRadius: 24, border: `5px solid ${C.ink}` }}>{sub}</div>}
+    </div>
+  );
+};
+
+// ====== TERMINAL (BANGUNAN) ======
+const Terminal: React.FC<{ progress: number; board: string[] }> = ({ progress, board }) => {
+  const p = (a: number, b: number) => Math.min(1, Math.max(0, (progress - a) / (b - a)));
+  return (
+    <div style={{ position: "absolute", left: 90, right: 90, bottom: 330, height: 560 }}>
+      {/* lantai aspal */}
+      <div style={{ position: "absolute", bottom: 0, left: -40, right: -40, height: 90, background: "#4a4a4a", borderRadius: 20, transform: `scaleX(${p(0, 0.2)})` }} />
+      {/* tiang */}
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} style={{ position: "absolute", bottom: 90, left: 40 + i * 270, width: 40, height: 330 * p(0.15 + i * 0.05, 0.45), background: C.wood, border: `5px solid ${C.ink}`, borderRadius: 8 }} />
+      ))}
+      {/* atap */}
+      <div style={{ position: "absolute", bottom: 410, left: 0, right: 0, height: 120, background: C.roof, border: `7px solid ${C.ink}`, borderRadius: "24px 24px 0 0", transformOrigin: "bottom", transform: `scaleY(${p(0.5, 0.75)})` }} />
+      {/* papan nama */}
+      <div style={{ position: "absolute", bottom: 440, left: 0, right: 0, textAlign: "center", fontSize: 54, fontWeight: 800, color: "#fff", opacity: p(0.8, 1) }}>
+        TERMINAL KAMPUNG KOMEN
+      </div>
+      {/* papan tujuan */}
+      <div style={{ position: "absolute", bottom: 120, left: 120, right: 120, background: "#10231a", border: `7px solid ${C.ink}`, borderRadius: 16, padding: "14px 24px", opacity: p(0.75, 0.95) }}>
+        <div style={{ color: C.gold, fontSize: 34, fontWeight: 700 }}>TUJUAN HARI INI</div>
+        {board.length === 0 && <div style={{ color: "#7f8c8d", fontSize: 44, fontWeight: 700 }}>— kosong, nunggu komen —</div>}
+        {board.map((b, i) => (
+          <div key={b} style={{ color: "#fff", fontSize: 46, fontWeight: 800, letterSpacing: 2 }}>{`${i + 1}. ${b}`}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ====== BUS ======
+const Bus: React.FC<{ x: number; color: string; label: string }> = ({ x, color, label }) => (
+  <div style={{ position: "absolute", bottom: 330, left: x, width: 420, height: 190 }}>
+    <div style={{ position: "absolute", inset: "0 0 30px 0", background: color, border: `7px solid ${C.ink}`, borderRadius: 30 }} />
+    <div style={{ position: "absolute", top: 22, left: 26, right: 26, height: 62, display: "flex", gap: 10 }}>
+      {[0, 1, 2, 3].map((i) => <div key={i} style={{ flex: 1, background: "#cfefff", border: `5px solid ${C.ink}`, borderRadius: 10 }} />)}
+    </div>
+    <div style={{ position: "absolute", top: 100, left: 0, right: 0, textAlign: "center", color: "#fff", fontSize: 40, fontWeight: 800 }}>{label}</div>
+    {[60, 290].map((l) => <div key={l} style={{ position: "absolute", bottom: 0, left: l, width: 70, height: 70, borderRadius: "50%", background: C.ink, border: "10px solid #888" }} />)}
+  </div>
+);
+
+// ====== KOMENTAR ======
+const CommentCard: React.FC<{ k: Komen; at: number; i: number; winner?: boolean }> = ({ k, at, i, winner }) => {
+  const f = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const s = spring({ frame: f - at, fps, config: { damping: 12, stiffness: 120 } });
+  const likes = Math.round(interpolate(f, [at, at + 50], [0, k.likes], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  return (
+    <div
+      style={{
+        transform: `translateX(${(1 - s) * 900}px)`,
+        opacity: s > 0.02 ? 1 : 0,
+        display: "flex",
+        gap: 20,
+        alignItems: "center",
+        background: winner ? "#fff3b0" : C.cream,
+        border: `6px solid ${C.ink}`,
+        borderRadius: 30,
+        padding: "18px 24px",
+        marginBottom: 20,
+        boxShadow: `0 8px 0 ${C.ink}`,
+      }}
+    >
+      <div style={{ flex: "0 0 92px", height: 92, borderRadius: "50%", background: k.color, border: `5px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 46, fontWeight: 800 }}>
+        {k.user[1].toUpperCase()}
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 30, fontWeight: 700, color: "#7a6a58" }}>{k.user}</div>
+        <div style={{ fontSize: 40, fontWeight: 700, color: C.ink, lineHeight: 1.1 }}>{k.text}</div>
+      </div>
+      <div style={{ textAlign: "center", color: C.tt, fontWeight: 800, fontSize: 34 }}>
+        <div style={{ fontSize: 48 }}>♥</div>
+        {likes.toLocaleString("id-ID")}
+      </div>
+    </div>
+  );
+};
+
+// ====== VOTING BAR ======
+const VoteBars: React.FC<{ start: number }> = ({ start }) => {
+  const f = useCurrentFrame();
+  const total = KOMEN.reduce((a, b) => a + b.likes, 0);
+  return (
+    <div style={{ position: "absolute", left: 60, right: 60, bottom: 120, background: C.cream, border: `6px solid ${C.ink}`, borderRadius: 30, padding: 24 }}>
+      <div style={{ fontSize: 40, fontWeight: 800, color: C.ink, marginBottom: 10 }}>HASIL VOTING NETIZEN</div>
+      {KOMEN.map((k, i) => {
+        const w = interpolate(f, [start + i * 6, start + 60 + i * 6], [0, (k.likes / total) * 100 * 2.2], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        return (
+          <div key={k.dest} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
+            <div style={{ width: 200, fontSize: 32, fontWeight: 800, color: C.ink }}>{k.dest}</div>
+            <div style={{ height: 36, width: `${w}%`, background: k.color, border: `4px solid ${C.ink}`, borderRadius: 18 }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ====== ADEGAN ======
+const SceneHook: React.FC = () => (
+  <>
+    <DayBadge />
+    <Caption text="BIKIN TERMINAL DARI NOL!" sub="Tujuannya? Netizen yang atur 😎" top={290} />
+    <Pop at={20} style={{ position: "absolute", bottom: 330, left: 0, right: 0, textAlign: "center", fontSize: 220 }}>🚌</Pop>
+  </>
+);
+
+const SceneBuild: React.FC = () => {
+  const f = useCurrentFrame();
+  const progress = interpolate(f, [10, 270], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const shake = progress < 1 ? Math.sin(f * 1.4) * 3 : 0;
+  return (
+    <>
+      <DayBadge />
+      <Caption text="MULAI NGEBANGUN…" sub={progress < 1 ? `Progress ${Math.round(progress * 100)}%` : "Terminal jadi! ✅"} />
+      <div style={{ transform: `translateY(${shake}px)` }}>
+        <Terminal progress={progress} board={[]} />
+      </div>
+      <Pop at={40} style={{ position: "absolute", bottom: 880, left: 70, fontSize: 130 }}>🔨</Pop>
+      <Pop at={120} style={{ position: "absolute", bottom: 880, right: 70, fontSize: 130 }}>👷</Pop>
+    </>
+  );
+};
+
+const SceneComments: React.FC = () => {
+  const winnerIdx = 0;
+  return (
+    <>
+      <DayBadge />
+      <Caption text="KOMEN LANGSUNG MASUK!" sub="Tujuan bus diatur kalian 👇" />
+      <div style={{ position: "absolute", top: 560, left: 50, right: 50 }}>
+        {KOMEN.map((k, i) => (
+          <CommentCard key={k.user} k={k} i={i} at={20 + i * 55} winner={i === winnerIdx && i >= 0 && false} />
+        ))}
+      </div>
+    </>
+  );
+};
+
+const SceneVote: React.FC = () => (
+  <>
+    <DayBadge />
+    <Caption text="HITUNG SUARA!" sub="Like terbanyak = tujuan menang" />
+    <div style={{ position: "absolute", top: 560, left: 50, right: 50 }}>
+      <CommentCard k={KOMEN[0]} i={0} at={0} winner />
+      <CommentCard k={KOMEN[1]} i={1} at={8} />
+    </div>
+    <VoteBars start={20} />
+  </>
+);
+
+const SceneBus: React.FC = () => {
+  const f = useCurrentFrame();
+  const board = KOMEN.slice(0, 3).map((k) => k.dest);
+  const shown = board.slice(0, 1 + Math.floor(f / 60));
+  const busIdx = Math.min(2, Math.floor(f / 150));
+  const local = f - busIdx * 150;
+  const x = interpolate(local, [0, 40, 100, 150], [-450, 330, 330, 1200], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) });
+  const k = KOMEN[busIdx];
+  return (
+    <>
+      <DayBadge />
+      <Caption text="BUS PERTAMA BERANGKAT!" sub={`Tujuan: ${k.dest} 🚌💨`} />
+      <Terminal progress={1} board={shown} />
+      <Bus x={x} color={k.color} label={`→ ${k.dest}`} />
+    </>
+  );
+};
+
+const SceneCTA: React.FC = () => {
+  const f = useCurrentFrame();
+  const pulse = 1 + Math.sin(f / 5) * 0.04;
+  return (
+    <>
+      <DayBadge />
+      <Caption text="DAY 2: KOMEN LAGI!" sub="Mau dibangun apa selanjutnya?" top={330} />
+      <Pop at={15} style={{ position: "absolute", top: 760, left: 60, right: 60, background: C.cream, border: `8px solid ${C.ink}`, borderRadius: 40, padding: 40, textAlign: "center", boxShadow: `0 12px 0 ${C.ink}` }}>
+        <div style={{ fontSize: 60, fontWeight: 800, color: C.ink, lineHeight: 1.1 }}>Tulis tujuan bus berikutnya di kolom komentar 👇</div>
+        <div style={{ marginTop: 24, fontSize: 40, fontWeight: 700, color: "#7a6a58" }}>Like terbanyak yang menang!</div>
+      </Pop>
+      <div style={{ position: "absolute", bottom: 280, left: 0, right: 0, display: "flex", justifyContent: "center", transform: `scale(${pulse})` }}>
+        <div style={{ background: C.tt, color: "#fff", border: `7px solid ${C.ink}`, borderRadius: 60, padding: "14px 60px", fontSize: 70, fontWeight: 800 }}>FOLLOW ♥</div>
+      </div>
+    </>
+  );
+};
+
+// ====== KOMPOSISI UTAMA ======
+export const Terminal NetizenDay1: React.FC = () => (
+  <AbsoluteFill style={{ fontFamily }}>
+    <Background />
+    <Sequence from={0} durationInFrames={4 * FPS}><SceneHook /></Sequence>
+    <Sequence from={4 * FPS} durationInFrames={10 * FPS}><SceneBuild /></Sequence>
+    <Sequence from={14 * FPS} durationInFrames={14 * FPS}><SceneComments /></Sequence>
+    <Sequence from={28 * FPS} durationInFrames={9 * FPS}><SceneVote /></Sequence>
+    <Sequence from={37 * FPS} durationInFrames={15 * FPS}><SceneBus /></Sequence>
+    <Sequence from={52 * FPS} durationInFrames={8 * FPS}><SceneCTA /></Sequence>
+  </AbsoluteFill>
+);
+
+/* ====== Root.tsx ======
+import { Composition } from "remotion";
+import { Terminal NetizenDay1, FPS, DURATION, WIDTH, HEIGHT } from "./KampungKomenDay1";
+
+export const RemotionRoot = () => (
+  <Composition id="Terminal NetizenDay1" component={Terminal NetizenDay1}
+    durationInFrames={DURATION} fps={FPS} width={WIDTH} height={HEIGHT} />
+);
+*/
